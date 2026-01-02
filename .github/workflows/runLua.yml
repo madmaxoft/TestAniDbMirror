@@ -16,7 +16,7 @@ jobs:
       - name: Install Lua and LuaRocks
         run: |
           sudo apt-get update
-          sudo apt-get install -y lua5.3 luarocks
+          sudo apt-get install -y luarocks
 
       - name: Install Lua dependencies
         run: |
