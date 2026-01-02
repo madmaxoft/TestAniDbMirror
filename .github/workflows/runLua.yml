@@ -28,9 +28,9 @@ jobs:
 
       - name: Run script
         env:
-          LocalAniDbMirror_ClientName: ${{ secrets.ClientName }}
-          LocalAniDbMirror_ClientSecret: ${{ secrets.ClientSecret }}
-          LocalAniDbMirror_ApiServer: ${{ secrets.ApiServer }}
+          LocalAniDbMirror_ClientName: ${{ secrets.LocalAniDbMirror_ClientName }}
+          LocalAniDbMirror_ClientSecret: ${{ secrets.LocalAniDbMirror_ClientSecret }}
+          LocalAniDbMirror_ApiServer: ${{ secrets.LocalAniDbMirror_ApiServer }}
         run: |
           luajit main.lua
 
