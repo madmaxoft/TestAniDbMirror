@@ -29,9 +29,6 @@ local gApiServer    = assert(os.getenv("LocalAniDbMirror_ApiServer"),    "Missin
 assert(gClientName ~= "",   "Empty ClientName")
 assert(gClientSecret ~= "", "Empty ClientSecret")
 assert(gApiServer ~= "",    "Empty ApiServer")
-local gPollDelaySeconds = 2
-
-lfs.mkdir("output")
 
 
 
@@ -328,6 +325,11 @@ end
 --- Main work loop
 log("Starting LocalAniDbMirror client")
 
+log("ClientName length: %d", #gClientName)
+log("ClientSecret length: %d", #gClientSecret)
+log("ApiServer length: %d", #gApiServer)
+
+lfs.mkdir("output")
 local ok, err = checkServer()
 if not ok then
 	error("Server check failed: " .. tostring(err))
@@ -337,23 +339,21 @@ log("Server verified")
 while (true) do
 	local resp, err = requestWork()
 	if not(resp) then
-		log("reserve failed: " .. tostring(err))
-		socket.sleep(gPollDelaySeconds)
-		goto continue
+		log("reserve failed: \"%s\"", tostring(err))
+		os.exit(0)
 	end
 
 	if not(resp.ok) then
 		log("no work available")
-		socket.sleep(gPollDelaySeconds)
-		goto continue
+		os.exit(0)
 	end
 
 	local id = resp.id
-	log("Reserved id " .. tostring(id))
+	log("Reserved id %s", tostring(id))
 
 	local result, msg = processWork(id)
 	if not(result) then
-		log("processing failed: " .. tostring(msg))
+		log("processing failed: \"%s\"", tostring(msg))
 		os.exit(1)
 	end
 
@@ -364,11 +364,11 @@ while (true) do
 
 	local commitResp, commitErr = commitWork(id, result)
 	if not(commitResp) then
-		log("commit failed: " .. tostring(commitErr))
+		log("commit failed: \"%s\"", tostring(commitErr))
 	elseif not(commitResp.ok) then
-		log("commit rejected: " .. tostring(commitResp.error))
+		log("commit rejected: \"%s\"", tostring(commitResp.error))
 	else
-		log("Committed id " .. tostring(id))
+		log("Committed id %s", tostring(id))
 	end
 
 	::continue::
