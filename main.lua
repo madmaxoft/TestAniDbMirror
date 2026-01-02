@@ -322,6 +322,20 @@ end
 
 
 
+-- Force IPv4 (ChatGPT-generated):
+local socket = require("socket")
+socket.dns.settimeout(5)
+socket.dns.toip = function(host)
+    return socket.dns.getaddrinfo(host, {
+        family = "inet",
+        socktype = "stream"
+    })[1].addr
+end
+
+
+
+
+
 --- Main work loop
 log("Starting LocalAniDbMirror client")
 
