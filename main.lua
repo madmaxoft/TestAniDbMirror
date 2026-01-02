@@ -103,15 +103,16 @@ end
 -- Returns nil and error message on failure
 local function parseLuaTable(aBody)
 	local chunk, err = loadstring("return " .. aBody)
-	if not chunk then
+	if not(chunk) then
 		return nil, "invalid lua response: " .. tostring(err)
 	end
 
 	local ok, result = pcall(chunk)
-	if not ok then
+	if not(ok) then
 		return nil, "lua eval failed: " .. tostring(result)
 	end
 
+	log("parseLuaTable: parsed into type %s", type(result))
 	return result
 end
 
@@ -133,10 +134,11 @@ local function httpGet(aUrl)
 			["Client-Secret"] = gClientSecret,
 		},
 	})
-	if not(ok) then
+	if (not(ok) or (code ~= "200")) then
 		return nil, string.format("http GET of %s failed: code %s", aUrl, tostring(code))
 	end
 	local body = table.concat(responseChunks)
+	log("http GET of %s succeeded, got %d bytes in response.", aUrl, #body)
 	return parseLuaTable(body)
 end
 
@@ -161,10 +163,11 @@ local function httpPost(aUrl, aBody)
 		source = ltn12.source.string(aBody),
 		sink = ltn12.sink.table(responseChunks),
 	})
-	if not(ok) then
+	if (not(ok) or (code ~= "200")) then
 		return nil, string.format("http POST to %s failed: code %s", aUrl, tostring(code))
 	end
 	local body = table.concat(responseChunks)
+	log("http POST to %s succeeded, got %d bytes in response.", aUrl, #body)
 	return parseLuaTable(body)
 end
 
@@ -185,6 +188,7 @@ local function checkServer()
 	if ((type(resp) ~= "table") or not(resp.ok)) then
 		return nil, "invalid status response"
 	end
+	log("server status OK")
 
 	-- Check auth:
 	resp, err = httpGet(gApiServer .. "/statusAuth")
@@ -194,6 +198,7 @@ local function checkServer()
 	if ((type(resp) ~= "table") or not(resp.ok)) then
 		return nil, "invalid statusAuth response"
 	end
+	log("server statusAuth OK")
 	return true
 end
 
