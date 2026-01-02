@@ -407,7 +407,7 @@ while (true) do
 	end
 
 	-- Save to file:
-	local f = assert(io.open("output/%d.xml", "wb"))
+	local f = assert(io.open(string.format("output/%s.xml", tostring(id)), "wb"))
 	f:write(result)
 	f:close()
 
