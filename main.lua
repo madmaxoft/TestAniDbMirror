@@ -26,7 +26,11 @@ local zlib = require("zlib")
 local gClientName   = assert(os.getenv("LocalAniDbMirror_ClientName"),   "Missing ClientName")
 local gClientSecret = assert(os.getenv("LocalAniDbMirror_ClientSecret"), "Missing ClientSecret")
 local gApiServer    = assert(os.getenv("LocalAniDbMirror_ApiServer"),    "Missing ApiServer")
+assert(gClientName ~= "",   "Empty ClientName")
+assert(gClientSecret ~= "", "Empty ClientSecret")
+assert(gApiServer ~= "",    "Empty ApiServer")
 local gPollDelaySeconds = 2
+
 lfs.mkdir("output")
 
 
