@@ -135,7 +135,7 @@ local function httpGet(aUrl)
 	if (not(ok) or (code ~= 200)) then
 		if (code == 401) then
 			local body = table.concat(responseChunks)
-			log("Unauthorized, response: %s %s", body:sub(1, 3), body:sub(4))
+			log("Unauthorized, response: %s %s", body:sub(1, 17), body:sub(18))
 		end
 		return nil, string.format("http GET of %s failed: code %s", aUrl, tostring(code))
 	end
