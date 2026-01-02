@@ -12,7 +12,8 @@ and commits them back to the CnC server.
 
 
 local socket = require("socket")
-local sockethttp = require("ssl.https")
+local http = require("socket.http")
+local https = require("ssl.https")
 local ltn12 = require("ltn12")
 local expat = require("lxp")
 local lom = require("lxp.lom")
@@ -160,7 +161,7 @@ local function apiServerGet(aUrlEndpoint)
 	assert(type(aUrlEndpoint) == "string")
 
 	local responseChunks = {}
-	local ok, code = sockethttp.request(
+	local ok, code = https.request(
 	{
 		url = "https://" .. gApiServerIp .. gApiServerPath .. aUrlEndpoint,
 		sink = ltn12.sink.table(responseChunks),
@@ -176,10 +177,10 @@ local function apiServerGet(aUrlEndpoint)
 			local body = table.concat(responseChunks)
 			log("Unauthorized, response: %s %s", body:sub(1, 17), body:sub(18))
 		end
-		return nil, string.format("http GET of %s failed: code \"%s\"", aUrlEndpoint, tostring(code))
+		return nil, string.format("API GET of %s failed: code \"%s\"", aUrlEndpoint, tostring(code))
 	end
 	local body = table.concat(responseChunks)
-	log("http GET of %s succeeded, got %d bytes in response.", aUrlEndpoint, #body)
+	log("API GET of %s succeeded, got %d bytes in response.", aUrlEndpoint, #body)
 	return parseLuaTable(body)
 end
 
@@ -194,7 +195,7 @@ local function apiServerPost(aUrlEndpoint, aBody)
 	assert(type(aBody) == "string")
 
 	local responseChunks = {}
-	local ok, code = sockethttp.request(
+	local ok, code = https.request(
 	{
 		url = "https://" .. gApiServerIp .. gApiServerPath .. aUrlEndpoint,
 		method = "POST",
@@ -209,10 +210,10 @@ local function apiServerPost(aUrlEndpoint, aBody)
 		sink = ltn12.sink.table(responseChunks),
 	})
 	if (not(ok) or (code ~= 200)) then
-		return nil, string.format("http POST to %s failed: code %s", aUrl, tostring(code))
+		return nil, string.format("API POST to %s failed: code %s", aUrlEndpoint, tostring(code))
 	end
 	local body = table.concat(responseChunks)
-	log("http POST to %s succeeded, got %d bytes in response.", aUrl, #body)
+	log("API POST to %s succeeded, got %d bytes in response.", aUrlEndpoint, #body)
 	return parseLuaTable(body)
 end
 
@@ -299,7 +300,7 @@ local function fetchAniDbXml(aId)
 
 	local url = "http://api.anidb.net:9001/httpapi?client=localanidbmirror&clientver=3&protover=1&request=anime&aid=" .. aId
 	local response = {}
-	local ok, code, headers = sockethttp.request{
+	local ok, code, headers = http.request{
 		url = url,
 		sink = ltn12.sink.table(response),
 		headers = {
