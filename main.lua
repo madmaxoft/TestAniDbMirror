@@ -39,8 +39,9 @@ lfs.mkdir("output")
 
 
 --- Log a message with timestamp
-local function log(aMsg)
-	print(os.date("%Y-%m-%d %H:%M:%S") .. " | " .. aMsg)
+local function log(aMsg, ...)
+	local msg = string.format(aMsg, ...)
+	print(os.date("%Y-%m-%d %H:%M:%S") .. " | " .. msg)
 end
 
 
