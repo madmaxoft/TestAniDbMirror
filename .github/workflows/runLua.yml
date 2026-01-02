@@ -16,11 +16,12 @@ jobs:
       - name: Install Lua and LuaRocks
         run: |
           sudo apt-get update
-          sudo apt-get install -y luarocks luajit
+          sudo apt-get install -y luarocks luajit libssl-dev ca-certificates
 
       - name: Install Lua dependencies
         run: |
           sudo luarocks install luasocket
+          sudo luarocks install luasec
           sudo luarocks install luaexpat
           sudo luarocks install luafilesystem
           sudo luarocks install lua-zlib
