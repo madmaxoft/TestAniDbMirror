@@ -22,13 +22,49 @@ local zlib = require("zlib")
 
 
 
--- Read the config from the environment:
-local gClientName   = assert(os.getenv("LocalAniDbMirror_ClientName"),   "Missing ClientName")
-local gClientSecret = assert(os.getenv("LocalAniDbMirror_ClientSecret"), "Missing ClientSecret")
-local gApiServer    = assert(os.getenv("LocalAniDbMirror_ApiServer"),    "Missing ApiServer")
+-- Read the config from the environment / parameters (for debugging):
+local arg = {...}
+local gClientName   = assert(os.getenv("LocalAniDbMirror_ClientName")   or arg[1], "Missing ClientName")
+local gClientSecret = assert(os.getenv("LocalAniDbMirror_ClientSecret") or arg[2], "Missing ClientSecret")
+local gApiServer    = assert(os.getenv("LocalAniDbMirror_ApiServer")    or arg[3], "Missing ApiServer")
 assert(gClientName ~= "",   "Empty ClientName")
 assert(gClientSecret ~= "", "Empty ClientSecret")
 assert(gApiServer ~= "",    "Empty ApiServer")
+local gApiServerHostAndPort, gApiServerPath, gApiServerIp
+
+
+
+
+
+--- Initializes the ApiServer-related variables for making repeated requests
+-- This is used to force IPv4
+-- We then request to an IP address instead of a hostname, and supply our own Host header
+local function initApiServer()
+    local parsed = assert(require("socket.url").parse(gApiServer))
+    if (parsed.scheme ~= "https") then
+        error("ApiServer: Only https:// URLs are supported")
+    end
+    local host = assert(parsed.host, "Missing host")
+    local port = parsed.port or 443
+    gApiServerPath = parsed.path or "/"
+    if (parsed.query) then
+        gApiServerPath = gApiServerPath .. "?" .. parsed.query
+    end
+	local info = assert(socket.dns.getaddrinfo(host))
+	for _, v in ipairs(info) do
+		if (v.family == "inet") then
+			gApiServerIp = v.addr
+			break
+		end
+	end
+	assert(gApiServerIp, "No IPv4 address found for ApiServer")
+	if (port == 443) then
+		gApiServerHostAndPort = host
+	else
+		gApiServerHostAndPort = host .. ":" .. tostring(port)
+		gApiServerIp = gApiServerIp .. ":" .. tostring(port)
+	end
+end
 
 
 
@@ -118,16 +154,19 @@ end
 
 
 
---- Sends a GET request to the CnC server
+--- Sends a GET request to the specified CnC server's endpoint
 -- Returns the response as a Lua table, or nil and message on failure
-local function httpGet(aUrl)
+local function apiServerGet(aUrlEndpoint)
+	assert(type(aUrlEndpoint) == "string")
+
 	local responseChunks = {}
 	local ok, code = sockethttp.request(
 	{
-		url = aUrl,
+		url = "https://" .. gApiServerIp .. gApiServerPath .. aUrlEndpoint,
 		sink = ltn12.sink.table(responseChunks),
 		headers =
 		{
+			["Host"] = gApiServerHostAndPort,
 			["Client-Name"] = gClientName,
 			["Client-Auth"] = gClientSecret,
 		},
@@ -137,10 +176,10 @@ local function httpGet(aUrl)
 			local body = table.concat(responseChunks)
 			log("Unauthorized, response: %s %s", body:sub(1, 17), body:sub(18))
 		end
-		return nil, string.format("http GET of %s failed: code %s", aUrl, tostring(code))
+		return nil, string.format("http GET of %s failed: code \"%s\"", aUrlEndpoint, tostring(code))
 	end
 	local body = table.concat(responseChunks)
-	log("http GET of %s succeeded, got %d bytes in response.", aUrl, #body)
+	log("http GET of %s succeeded, got %d bytes in response.", aUrlEndpoint, #body)
 	return parseLuaTable(body)
 end
 
@@ -150,13 +189,17 @@ end
 
 --- Sends a GET request to the CnC server
 -- Returns the response as a Lua table, or nil and message on failure
-local function httpPost(aUrl, aBody)
+local function apiServerPost(aUrlEndpoint, aBody)
+	assert(type(aUrlEndpoint) == "string")
+	assert(type(aBody) == "string")
+
 	local responseChunks = {}
 	local ok, code = sockethttp.request(
 	{
-		url = aUrl,
+		url = "https://" .. gApiServerIp .. gApiServerPath .. aUrlEndpoint,
 		method = "POST",
 		headers = {
+			["Host"] = gApiServerHostAndPort,
 			["Content-Type"] = "application/x-www-form-urlencoded",
 			["Content-Length"] = tostring(#aBody),
 			["Client-Name"] = gClientName,
@@ -183,7 +226,7 @@ end
 -- Returns true if the server replies as expected
 local function checkServer()
 	-- Check if this is an API server at all:
-	local resp, err = httpGet(gApiServer .. "/status")
+	local resp, err = apiServerGet("/status")
 	if not resp then
 		return nil, err
 	end
@@ -193,7 +236,7 @@ local function checkServer()
 	log("server status OK")
 
 	-- Check auth:
-	resp, err = httpGet(gApiServer .. "/statusAuth")
+	resp, err = apiServerGet("/statusAuth")
 	if not resp then
 		return nil, err
 	end
@@ -211,7 +254,7 @@ end
 --- Request a single work item
 -- Returns the lua table returned from the API call
 local function requestWork()
-	return httpPost(gApiServer .. "/reserve", "")
+	return apiServerPost("/reserve", "")
 end
 
 
@@ -223,7 +266,7 @@ local function abortWork(aId)
 	assert(tonumber(aId))
 
 	local body = "id=" .. tostring(aId)
-	return httpPost(gApiServer .. "/giveBack", body)
+	return apiServerPost("/giveBack", body)
 end
 
 
@@ -238,7 +281,7 @@ local function commitWork(aId, aResult)
 	local body =
 		"id=" .. tostring(aId) ..
 		"&detailsBlobB64=" .. urlEncode(base64Encode(aResult))
-	return httpPost(gApiServer .. "/submit", body)
+	return apiServerPost("/submit", body)
 end
 
 
@@ -322,26 +365,14 @@ end
 
 
 
--- Force IPv4 (ChatGPT-generated):
-local socket = require("socket")
-socket.dns.settimeout(5)
-socket.dns.toip = function(host)
-    return socket.dns.getaddrinfo(host, {
-        family = "inet",
-        socktype = "stream"
-    })[1].addr
-end
-
-
-
-
-
 --- Main work loop
 log("Starting LocalAniDbMirror client")
 
+initApiServer()
 log("ClientName length: %d", #gClientName)
 log("ClientSecret length: %d", #gClientSecret)
 log("ApiServer length: %d", #gApiServer)
+log("ApiServer IP: %s", gApiServerIp)
 
 lfs.mkdir("output")
 local ok, err = checkServer()
