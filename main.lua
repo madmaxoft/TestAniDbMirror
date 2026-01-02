@@ -12,7 +12,7 @@ and commits them back to the CnC server.
 
 
 local socket = require("socket")
-local sockethttp = require("socket.http")
+local sockethttp = require("ssl.https")
 local ltn12 = require("ltn12")
 local expat = require("lxp")
 local lom = require("lxp.lom")
