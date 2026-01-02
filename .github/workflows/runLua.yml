@@ -20,10 +20,10 @@ jobs:
 
       - name: Install Lua dependencies
         run: |
-          luarocks install luasocket
-          luarocks install luaexpat
-          luarocks install luafilesystem
-          luarocks install lua-zlib
+          sudo luarocks install luasocket
+          sudo luarocks install luaexpat
+          sudo luarocks install luafilesystem
+          sudo luarocks install lua-zlib
 
       - name: Run script
         env:
