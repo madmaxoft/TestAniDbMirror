@@ -134,7 +134,7 @@ local function httpGet(aUrl)
 			["Client-Secret"] = gClientSecret,
 		},
 	})
-	if (not(ok) or (code ~= "200")) then
+	if (not(ok) or (code ~= 200)) then
 		return nil, string.format("http GET of %s failed: code %s", aUrl, tostring(code))
 	end
 	local body = table.concat(responseChunks)
@@ -163,7 +163,7 @@ local function httpPost(aUrl, aBody)
 		source = ltn12.source.string(aBody),
 		sink = ltn12.sink.table(responseChunks),
 	})
-	if (not(ok) or (code ~= "200")) then
+	if (not(ok) or (code ~= 200)) then
 		return nil, string.format("http POST to %s failed: code %s", aUrl, tostring(code))
 	end
 	local body = table.concat(responseChunks)
