@@ -130,7 +130,7 @@ local function httpGet(aUrl)
 		},
 	})
 	if not(ok) then
-		return nil, "http GET failed"
+		return nil, string.format("http GET of %s failed: code %s", aUrl, tostring(code))
 	end
 	local body = table.concat(responseChunks)
 	return parseLuaTable(body)
@@ -158,7 +158,7 @@ local function httpPost(aUrl, aBody)
 		sink = ltn12.sink.table(responseChunks),
 	})
 	if not(ok) then
-		return nil, "http POST failed"
+		return nil, string.format("http POST to %s failed: code %s", aUrl, tostring(code))
 	end
 	local body = table.concat(responseChunks)
 	return parseLuaTable(body)
