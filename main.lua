@@ -37,6 +37,16 @@ local gApiServerHostAndPort, gApiServerPath, gApiServerIp
 
 
 
+--- Log a message with timestamp
+local function log(aMsg, ...)
+	local msg = string.format(aMsg, ...)
+	print(os.date("%Y-%m-%d %H:%M:%S") .. " | " .. msg)
+end
+
+
+
+
+
 --- Initializes the ApiServer-related variables for making repeated requests
 -- This is used to force IPv4
 -- We then request to an IP address instead of a hostname, and supply our own Host header
@@ -68,16 +78,6 @@ local function initApiServer()
 	end
 end
 
-
-
-
-
-
---- Log a message with timestamp
-local function log(aMsg, ...)
-	local msg = string.format(aMsg, ...)
-	print(os.date("%Y-%m-%d %H:%M:%S") .. " | " .. msg)
-end
 
 
 
