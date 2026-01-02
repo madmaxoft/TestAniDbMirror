@@ -137,6 +137,7 @@ end
 ---------------------------------------------------------------------------- http:
 --- Parses the given string into a Lua table
 -- Returns nil and error message on failure
+-- Logs if the result is not a table (but passes it up as success)
 local function parseLuaTable(aBody)
 	local chunk, err = loadstring("return " .. aBody)
 	if not(chunk) then
@@ -148,7 +149,10 @@ local function parseLuaTable(aBody)
 		return nil, "lua eval failed: " .. tostring(result)
 	end
 
-	log("parseLuaTable: parsed into type %s", type(result))
+	if (type(result) ~= "table") then
+		log("parseLuaTable: parsed into unexpected type %s", type(result))
+	end
+
 	return result
 end
 
@@ -181,7 +185,6 @@ local function apiServerGet(aUrlEndpoint)
 		return nil, string.format("API GET of %s failed: code \"%s\"", aUrlEndpoint, tostring(code))
 	end
 	local body = table.concat(responseChunks)
-	log("API GET of %s succeeded, got %d bytes in response.", aUrlEndpoint, #body)
 	return parseLuaTable(body)
 end
 
@@ -214,7 +217,6 @@ local function apiServerPost(aUrlEndpoint, aBody)
 		return nil, string.format("API POST to %s failed: code %s", aUrlEndpoint, tostring(code))
 	end
 	local body = table.concat(responseChunks)
-	log("API POST to %s succeeded, got %d bytes in response.", aUrlEndpoint, #body)
 	return parseLuaTable(body)
 end
 
