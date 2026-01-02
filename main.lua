@@ -51,6 +51,7 @@ local function initApiServer()
     if (parsed.query) then
         gApiServerPath = gApiServerPath .. "?" .. parsed.query
     end
+	log("Resolving %s to IPv4...", host)
 	local info = assert(socket.dns.getaddrinfo(host))
 	for _, v in ipairs(info) do
 		if (v.family == "inet") then
