@@ -129,7 +129,7 @@ local function httpGet(aUrl)
 		headers =
 		{
 			["Client-Name"] = gClientName,
-			["Client-Secret"] = gClientSecret,
+			["Client-Auth"] = gClientSecret,
 		},
 	})
 	if (not(ok) or (code ~= 200)) then
@@ -160,7 +160,7 @@ local function httpPost(aUrl, aBody)
 			["Content-Type"] = "application/x-www-form-urlencoded",
 			["Content-Length"] = tostring(#aBody),
 			["Client-Name"] = gClientName,
-			["Client-Secret"] = gClientSecret,
+			["Client-Auth"] = gClientSecret,
 		},
 		source = ltn12.source.string(aBody),
 		sink = ltn12.sink.table(responseChunks),
